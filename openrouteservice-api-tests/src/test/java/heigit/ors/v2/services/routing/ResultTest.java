@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
+import static java.lang.Float.parseFloat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 
@@ -129,9 +130,9 @@ public class ResultTest extends ServiceTest {
                 .contentType("application/gpx+xml;charset=UTF-8")
                 .statusCode(200);
         testGpxConsistency(response, true);
+        testGpxGeometry(response);
 
         body.put("instructions", false);
-
         Response response_without_instructions = given()
                 .header("Accept", "application/gpx+xml")
                 .header("Content-Type", "application/json")
@@ -141,16 +142,54 @@ public class ResultTest extends ServiceTest {
                 .log().ifValidationFails()
                 .post(getEndPointPath() + "/{profile}/gpx");
         response_without_instructions.then()
+                .log().ifValidationFails()
                 .assertThat()
                 .contentType("application/gpx+xml;charset=UTF-8")
                 .statusCode(200);
         testGpxConsistency(response_without_instructions, false);
+        testGpxGeometry(response_without_instructions);
+    }
+
+    private void testGpxGeometry(Response response) throws ParserConfigurationException, IOException, SAXException {
+        String body = response.body().asString();
+        DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        Document doc = db.parse(new InputSource(new StringReader(body)));
+        Assert.assertEquals(doc.getDocumentElement().getTagName(), "gpx");
+        int doc_length = doc.getDocumentElement().getChildNodes().getLength();
+        Assert.assertTrue(doc_length > 0);
+        boolean gpxRte = false;
+        for (int i = 0; i < doc_length; i++) {
+            String item = doc.getDocumentElement().getChildNodes().item(i).getNodeName();
+            switch (item) {
+                case "rte":
+                    gpxRte = true;
+                    NodeList rteChildren = doc.getDocumentElement().getChildNodes().item(i).getChildNodes();
+                    int rteSize = rteChildren.getLength();
+                    Assert.assertEquals(76, rteSize);
+                    Assert.assertEquals(49.41172f, parseFloat(rteChildren.item(0).getAttributes().getNamedItem("lat").getNodeValue()));
+                    Assert.assertEquals(8.678615f, parseFloat(rteChildren.item(0).getAttributes().getNamedItem("lon").getNodeValue()));
+                    Assert.assertEquals(49.42208f, parseFloat(rteChildren.item(rteSize / 2).getAttributes().getNamedItem("lat").getNodeValue()));
+                    Assert.assertEquals(8.677165f, parseFloat(rteChildren.item(rteSize / 2).getAttributes().getNamedItem("lon").getNodeValue()));
+                    Assert.assertEquals(49.424603f, parseFloat(rteChildren.item(rteSize - 2).getAttributes().getNamedItem("lat").getNodeValue())); // The last item (-1) is the extension pack
+                    Assert.assertEquals(8.687809f, parseFloat(rteChildren.item(rteSize - 2).getAttributes().getNamedItem("lon").getNodeValue())); // The last item (-1) is the extension pack
+                    Node extensions = rteChildren.item(rteSize - 1);
+                    String item1 = extensions.getChildNodes().item(0).getTextContent();
+                    Assert.assertEquals(2362.1f, parseFloat(extensions.getChildNodes().item(0).getTextContent()));
+                    Assert.assertEquals(273.5f, parseFloat(extensions.getChildNodes().item(1).getTextContent()));
+                    Assert.assertEquals(0.0f, parseFloat(extensions.getChildNodes().item(2).getTextContent()));
+                    Assert.assertEquals(0.0f, parseFloat(extensions.getChildNodes().item(3).getTextContent()));
+                    Assert.assertEquals(31.1f, parseFloat(extensions.getChildNodes().item(4).getTextContent()));
+                    break;
+            }
+        }
+        Assert.assertTrue(gpxRte);
     }
 
     /**
      * Validates the xml consistency of the gpx output. Instructions can be turned on or off.
      * The functions tests if all xml members are present in the output.
      * Completeness is important for the xml schema verification!
+     * It does not validate the correctness of the route geometry!
      *
      * @param response
      * @param instructions
@@ -2333,7 +2372,7 @@ public class ResultTest extends ServiceTest {
     private JSONArray constructCoords(String coordString) {
         JSONArray coordinates = new JSONArray();
         String[] coordPairs = coordString.split("\\|");
-        for(String pair : coordPairs) {
+        for (String pair : coordPairs) {
             JSONArray coord = new JSONArray();
             String[] pairCoords = pair.split(",");
             coord.put(Double.parseDouble(pairCoords[0]));
@@ -2347,9 +2386,9 @@ public class ResultTest extends ServiceTest {
     private JSONArray constructBearings(String coordString) {
         JSONArray coordinates = new JSONArray();
         String[] coordPairs = coordString.split("\\|");
-        for(String pair : coordPairs) {
+        for (String pair : coordPairs) {
             JSONArray coord = new JSONArray();
-            if(pair != null && !pair.isEmpty()) {
+            if (pair != null && !pair.isEmpty()) {
                 String[] pairCoords = pair.split(",");
                 coord.put(Double.parseDouble(pairCoords[0]));
                 coord.put(Double.parseDouble(pairCoords[1]));
@@ -2368,7 +2407,7 @@ public class ResultTest extends ServiceTest {
     private JSONArray constructFromPipedList(String piped) {
         JSONArray items = new JSONArray();
         String[] extrasSplit = piped.split("\\|");
-        for(String extra : extrasSplit) {
+        for (String extra : extrasSplit) {
             items.put(extra);
         }
         return items;

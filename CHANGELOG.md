@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 ### Fixed
+- Corrected the GPX output of the APIv2. It was broken since release. (Issue #533)
 ### Changed
 ### Deprecated
 
