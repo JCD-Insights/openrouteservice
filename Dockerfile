@@ -49,4 +49,3 @@ RUN cp /ors-core/openrouteservice/target/*.war /usr/local/tomcat/webapps/ors.war
 # Start the container
 EXPOSE 8080
 CMD /usr/local/tomcat/bin/catalina.sh run
-
