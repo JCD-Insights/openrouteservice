@@ -24,7 +24,7 @@ COPY openrouteservice /ors-core/openrouteservice
 
 # Copy osm data file, config and cache if provided (ors will download otherwise)
 # COPY $OSM_FILE /ors-core/data/osm_file.osm
-# COPY $APP_CONFIG /ors-core/openrouteservice/src/main/resources/app.config
+COPY $APP_CONFIG /ors-core/openrouteservice/src/main/resources/app.config
 
 WORKDIR /ors-core
 
