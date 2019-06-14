@@ -27,4 +27,4 @@ target/
 nohup.out
 build/
 cgiar_cache/
-data/australia-latest.osm
+data/
