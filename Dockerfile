@@ -4,7 +4,7 @@ ENV MAVEN_OPTS="-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.o
 ENV MAVEN_CLI_OPTS="--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true"
 
 ARG APP_CONFIG=docker/conf/app.config
-ARG OSM_FILE=docker/data/australia-latest.osm
+ARG OSM_FILE=docker/data/australia-latest.osm.pbf
 ARG JAVA_OPTS
 ARG CATALINA_OPTS
 
@@ -23,7 +23,7 @@ RUN mkdir /ors-core
 COPY openrouteservice /ors-core/openrouteservice
 
 # Copy osm data file, config and cache if provided (ors will download otherwise)
-# COPY $OSM_FILE /ors-core/data/osm_file.osm
+COPY $OSM_FILE /ors-core/data/osm_file.osm.pbf
 COPY $APP_CONFIG /ors-core/openrouteservice/src/main/resources/app.config
 
 WORKDIR /ors-core
