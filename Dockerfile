@@ -3,8 +3,6 @@ FROM openjdk:8-jdk
 ENV MAVEN_OPTS="-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true"
 ENV MAVEN_CLI_OPTS="--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true"
 
-ARG APP_CONFIG=docker/conf/app.config
-ARG OSM_FILE=docker/data/australia-latest.osm.pbf
 ARG JAVA_OPTS
 ARG CATALINA_OPTS
 
@@ -21,10 +19,6 @@ ENV LC_ALL en_US.UTF-8
 RUN mkdir /ors-core
 # Copy ors sources
 COPY openrouteservice /ors-core/openrouteservice
-
-# Copy osm data file, config and cache if provided (ors will download otherwise)
-COPY $OSM_FILE /ors-core/data/osm_file.osm.pbf
-COPY $APP_CONFIG /ors-core/openrouteservice/src/main/resources/app.config
 
 WORKDIR /ors-core
 
