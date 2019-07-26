@@ -1,0 +1,44 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      docker: 18
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
+  build:
+    commands:
+      - export CI=true
+      - export CODEBUILD=true
+      - export CODEBUILD_GIT_BRANCH=`git symbolic-ref HEAD --short 2>/dev/null`
+      - |
+         if [ "$CODEBUILD_GIT_BRANCH" == "" ] ; then
+           CODEBUILD_GIT_BRANCH=`git branch -a --contains HEAD | sed -n 2p | awk '{ printf $1 }'` export CODEBUILD_GIT_BRANCH=${CODEBUILD_GIT_BRANCH#remotes/origin/}
+         fi
+      - echo CodeBuild branch $CODEBUILD_GIT_BRANCH
+      - echo branch $GIT_BRANCH
+      - echo Build started on `date` $
+      - printenv
+      - echo Building the Docker image for branch trigger $GIT_BRANCH base ref $CODEBUILD_WEBHOOK_BASE_REF branch $CODEBUILD_GIT_BRANCH header $CODEBUILD_WEBHOOK_HEAD_REF source version $CODEBUILD_SOURCE_VERSION
+      - echo $IMAGE_REPO_NAME:$IMAGE_TAG
+      - echo Building ORS
+      - docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:ors-$GIT_BRANCH .
+
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing Image to $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:ors-$GIT_BRANCH
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:ors-$GIT_BRANCH
+      - echo Deploying to Kubernetes for branch $GIT_BRANCH
+
+artifacts:
+  files:
+    - '**/*'
+  name: agile-artifacts
+  secondary-artifacts:
+    AgilePostBuild:
+      files:
+        - '**/*'
+      name: agile-artifacts
